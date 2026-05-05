@@ -51,8 +51,27 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
 
+    <!-- ==================== VIEW 0: LOGIN ==================== -->
+    <div id="loginView" class="view-section active flex-col min-h-screen items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#222] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 w-full max-w-sm text-center">
+            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Akses Terkunci</h2>
+            <p class="text-sm text-gray-500 mb-6">Masukkan kata sandi untuk membuka ruang menulis.</p>
+            <form id="loginForm" onsubmit="event.preventDefault(); checkPassword();">
+                <input type="password" id="passwordInput" placeholder="Kata Sandi" 
+                       class="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#1a1a1a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all mb-4 text-center">
+                <p id="loginError" class="text-red-500 text-sm mb-4 hidden">Sandi salah, silakan coba lagi.</p>
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors shadow-sm">
+                    Buka Kunci
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- ==================== VIEW 1: RUANG TULIS ==================== -->
-    <div id="editorView" class="view-section active flex-col min-h-screen">
+    <div id="editorView" class="view-section flex-col min-h-screen">
         <!-- Toolbar Utama -->
         <header class="border-b border-gray-200 dark:border-gray-800 p-4 flex flex-wrap gap-4 justify-between items-center sticky top-0 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md z-10">
             <div class="flex items-center gap-3 md:gap-4 flex-wrap">
@@ -372,6 +391,29 @@
                 updateThemeIcons();
             }
 
+            // Cek status login di sesi ini
+            const isLoggedIn = sessionStorage.getItem('is_logged_in') === 'true';
+            
+            if (isLoggedIn) {
+                initAppAfterLogin();
+            } else {
+                switchView('login');
+            }
+        };
+
+        window.checkPassword = () => {
+            const pass = document.getElementById('passwordInput').value;
+            if (pass === 'tulisansaya') {
+                sessionStorage.setItem('is_logged_in', 'true');
+                document.getElementById('passwordInput').value = ''; // bersihkan input
+                document.getElementById('loginError').classList.add('hidden');
+                initAppAfterLogin();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        };
+
+        function initAppAfterLogin() {
             // Restore Draft Lokal Sementara jika belum ada yg dibuka dari awan
             const savedText = localStorage.getItem('writing_session_text');
             const savedTitle = localStorage.getItem('writing_session_title');
@@ -381,9 +423,12 @@
             }
             updateStats();
             
-            // Inisiasi sistem awan
+            // Pindah ke editor
+            switchView('editor');
+            
+            // Inisiasi sistem awan HANYA setelah login berhasil
             setupFirebase();
-        };
+        }
 
         function autoSaveLocal() {
             // Simpan lokal sebagai backup jika document baru/belum disave ke cloud
