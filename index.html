@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halaman Menulis Kreatif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .editor-font {
+            font-family: 'Lora', serif;
+        }
+
+        .dark {
+            background-color: #1a1a1a;
+            color: #e5e7eb;
+        }
+
+        textarea:focus {
+            outline: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #444;
+        }
+
+        .view-section {
+            display: none;
+        }
+        .view-section.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+
+    <!-- ==================== VIEW 1: RUANG TULIS ==================== -->
+    <div id="editorView" class="view-section active flex-col min-h-screen">
+        <!-- Toolbar Utama -->
+        <header class="border-b border-gray-200 dark:border-gray-800 p-4 flex flex-wrap gap-4 justify-between items-center sticky top-0 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md z-10">
+            <div class="flex items-center gap-3 md:gap-4 flex-wrap">
+                <h1 class="font-semibold text-lg hidden sm:block">Ruang Tulis</h1>
+                <div class="h-6 w-[1px] bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
+                
+                <!-- Input file tersembunyi -->
+                <input type="file" id="fileInput" accept=".txt" class="hidden" onchange="handleFileUpload(event)">
+                
+                <!-- Tombol Buka (.txt) -->
+                <button onclick="document.getElementById('fileInput').click()" class="px-2 md:px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-sm transition-colors flex items-center gap-2" title="Buka File Lokal (.txt)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span class="hidden md:inline">Buka (.txt)</span>
+                </button>
+
+                <!-- Tombol Unduh (.txt) -->
+                <button onclick="downloadText()" class="px-2 md:px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-sm transition-colors flex items-center gap-2" title="Unduh File Lokal (.txt)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span class="hidden md:inline">Unduh (.txt)</span>
+                </button>
+
+                <!-- Tombol Simpan ke Firebase -->
+                <button onclick="saveToCloud()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2 font-medium shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Simpan (Cloud)
+                </button>
+
+                <!-- Tombol Daftar Tulisan -->
+                <button onclick="switchView('list')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2 font-medium shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    Daftar Tulisan
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2 ml-auto">
+                <button onclick="toggleTheme()" id="themeBtn" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors" title="Ganti Tema">
+                    <svg id="sunIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+                <button onclick="clearAll()" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 rounded-full transition-colors" title="Kosongkan Editor">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Area Menulis -->
+        <main class="flex-grow flex flex-col items-center p-4 md:p-8">
+            <div class="w-full max-w-3xl flex flex-col h-full bg-white dark:bg-[#222] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden min-h-[70vh]">
+                <input type="text" id="titleInput" placeholder="Judul Tulisan..." 
+                       class="w-full p-6 text-2xl md:text-3xl font-bold bg-transparent border-b border-gray-100 dark:border-gray-800 placeholder-gray-300 dark:placeholder-gray-700 editor-font">
+                
+                <textarea id="editor" placeholder="Mulai menulis cerita Anda di sini..." 
+                          class="w-full flex-grow p-6 md:p-10 text-lg md:text-xl leading-relaxed bg-transparent resize-none editor-font"></textarea>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] text-xs text-gray-500 flex justify-center gap-6">
+            <span id="wordCount">0 Kata</span>
+            <span id="charCount">0 Karakter</span>
+            <span id="firebaseStatus" class="italic flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-yellow-400" id="syncDot"></span>
+                <span id="syncText">Menghubungkan ke Cloud...</span>
+            </span>
+        </footer>
+    </div>
+
+    <!-- ==================== VIEW 2: RUANG DAFTAR TULISAN ==================== -->
+    <div id="listView" class="view-section flex-col min-h-screen">
+        <header class="border-b border-gray-200 dark:border-gray-800 p-4 flex justify-between items-center sticky top-0 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md z-10">
+            <div class="flex items-center gap-4">
+                <h1 class="font-semibold text-lg">Ruang Daftar Tulisan</h1>
+                <div class="h-6 w-[1px] bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
+                <button onclick="switchView('editor')" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-sm transition-colors flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Kembali Tulis
+                </button>
+            </div>
+            
+            <button onclick="createNewDoc()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2 font-medium shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Buat Baru
+            </button>
+        </header>
+
+        <main class="flex-grow p-4 md:p-8">
+            <div class="w-full max-w-5xl mx-auto">
+                <div id="writingsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Data tulisan dari Firebase akan dimuat di sini -->
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        Memuat daftar tulisan Anda dari awan...
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notifikasi Toast -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-800 text-white text-sm rounded-full opacity-0 transition-opacity z-50 pointer-events-none">
+        Tersimpan!
+    </div>
+
+    <!-- Modal Konfirmasi Custom -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-[#222] p-6 rounded-xl w-80 text-center shadow-lg border border-gray-200 dark:border-gray-700">
+            <h3 id="modalMessage" class="mb-6 text-lg font-medium">Apakah Anda yakin?</h3>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium">Batal</button>
+                <button id="modalConfirmBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Impor modul Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const editor = document.getElementById('editor');
+        const titleInput = document.getElementById('titleInput');
+        const wordCountDisplay = document.getElementById('wordCount');
+        const charCountDisplay = document.getElementById('charCount');
+        const toast = document.getElementById('toast');
+        const writingsGrid = document.getElementById('writingsGrid');
+        
+        const syncDot = document.getElementById('syncDot');
+        const syncText = document.getElementById('syncText');
+
+        // State Aplikasi
+        let db, auth, appId, currentUser;
+        let writingsList = [];
+        let currentDocId = null; 
+
+        // ----------------- PENGATURAN FIREBASE -----------------
+        const setupFirebase = async () => {
+            try {
+                // Menggunakan Config Firebase milikmu
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBXYqecKRQpUTyDzpOU8GgyZETlgQuWKmQ",
+                    authDomain: "webproject-6d706.firebaseapp.com",
+                    projectId: "webproject-6d706",
+                    storageBucket: "webproject-6d706.firebasestorage.app",
+                    messagingSenderId: "369405151835",
+                    appId: "1:369405151835:web:abceaf2ee40e5dc2f18d7e"
+                };
+                
+                appId = 'aplikasi-menulis-ku'; // ID Kustom untuk folder di Firebase
+                
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Autentikasi Anonim murni ke Firebase milikmu
+                await signInAnonymously(auth);
+
+                // Dengarkan perubahan user
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) {
+                        updateSyncStatus(true, "Terhubung ke Cloud");
+                        fetchWritingsFromCloud();
+                    } else {
+                        updateSyncStatus(false, "Terputus dari Cloud");
+                    }
+                });
+            } catch(e) {
+                console.error("Gagal inisialisasi Firebase:", e);
+                updateSyncStatus(false, "Sistem Cloud tidak tersedia");
+                renderEmptyCloudState();
+            }
+        };
+
+        const fetchWritingsFromCloud = () => {
+            if (!currentUser || !db) return;
+            const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'writings');
+            
+            onSnapshot(colRef, (snapshot) => {
+                writingsList = [];
+                snapshot.forEach(docSnap => {
+                    writingsList.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                
+                // Urutkan tulisan dari yang paling baru diubah (Rule 2)
+                writingsList.sort((a, b) => b.updatedAt - a.updatedAt);
+                renderWritingsList();
+            }, (error) => {
+                console.error("Error mengambil data dari cloud:", error);
+            });
+        };
+
+        // ----------------- FUNGSI CLOUD (TEREKSPOS KE GLOBAL) -----------------
+        window.saveToCloud = async () => {
+            if (!currentUser || !db) {
+                showToast("Anda tidak terhubung ke Cloud");
+                return;
+            }
+
+            const title = titleInput.value.trim() || 'Tanpa Judul';
+            const content = editor.value;
+            const now = Date.now();
+
+            const data = {
+                title,
+                content,
+                updatedAt: now
+            };
+
+            const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'writings');
+            
+            try {
+                if (currentDocId) {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'writings', currentDocId);
+                    await setDoc(docRef, data, { merge: true });
+                } else {
+                    const newDocRef = await addDoc(colRef, data);
+                    currentDocId = newDocRef.id; // Update ID
+                }
+                showToast("Berhasil tersimpan di Cloud!");
+                
+                // Hapus local draft saat sudah sukses ke cloud agar tidak tertimpa
+                localStorage.removeItem('writing_session_text');
+                localStorage.removeItem('writing_session_title');
+            } catch (e) {
+                console.error("Gagal simpan ke cloud:", e);
+                showToast("Gagal menyimpan ke Cloud");
+            }
+        };
+
+        window.openCloudWriting = (id) => {
+            const writing = writingsList.find(w => w.id === id);
+            if (writing) {
+                currentDocId = writing.id;
+                titleInput.value = writing.title;
+                editor.value = writing.content;
+                updateStats();
+                switchView('editor');
+            }
+        };
+
+        window.deleteCloudWriting = (id, event) => {
+            event.stopPropagation(); // Mencegah ter-kliknya kartu tulisan
+            showModal("Hapus tulisan ini dari Cloud secara permanen?", async () => {
+                if(!currentUser || !db) return;
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'writings', id);
+                    await deleteDoc(docRef);
+                    if (currentDocId === id) {
+                        window.createNewDoc(); // Reset editor jika yg dihapus sedang dibuka
+                    }
+                    showToast("Tulisan dihapus dari Cloud");
+                    closeModal();
+                } catch(e) {
+                    console.error("Gagal hapus doc:", e);
+                }
+            });
+        };
+
+        // ----------------- RENDER UI DAFTAR TULISAN -----------------
+        function renderWritingsList() {
+            if (writingsList.length === 0) {
+                writingsGrid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-500">
+                        <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p>Belum ada tulisan yang tersimpan di Cloud.</p>
+                        <p class="text-sm mt-1">Gunakan tombol "Simpan (Cloud)" di Ruang Tulis.</p>
+                    </div>`;
+                return;
+            }
+
+            writingsGrid.innerHTML = writingsList.map(w => {
+                const dateObj = new Date(w.updatedAt);
+                const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+                // Buat cuplikan isi teks
+                const snippet = w.content.length > 120 ? w.content.substring(0, 120) + '...' : (w.content || 'Kosong...');
+
+                return `
+                    <div onclick="openCloudWriting('${w.id}')" class="bg-white dark:bg-[#222] p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 cursor-pointer hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all group flex flex-col h-48">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-900 dark:text-gray-100 truncate pr-2">${w.title}</h3>
+                            <button onclick="deleteCloudWriting('${w.id}', event)" class="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="Hapus Tulisan">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 flex-grow editor-font overflow-hidden whitespace-pre-wrap">${snippet}</p>
+                        <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500">
+                            Terakhir diubah: ${dateStr}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderEmptyCloudState() {
+            writingsGrid.innerHTML = `
+                <div class="col-span-full text-center py-12 text-red-500">
+                    Koneksi Cloud tidak tersedia pada lingkungan ini.
+                </div>
+            `;
+        }
+
+        function updateSyncStatus(isOk, text) {
+            syncText.innerText = text;
+            if (isOk) {
+                syncDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            } else {
+                syncDot.className = "w-2 h-2 rounded-full bg-red-500";
+            }
+        }
+
+        // ----------------- LOGIKA LOKAL & EDITOR DARI SEBELUMNYA -----------------
+        window.onload = () => {
+            // Restore Tema
+            const isDark = localStorage.getItem('theme') === 'dark';
+            if (isDark) {
+                document.body.classList.add('dark');
+                updateThemeIcons();
+            }
+
+            // Restore Draft Lokal Sementara jika belum ada yg dibuka dari awan
+            const savedText = localStorage.getItem('writing_session_text');
+            const savedTitle = localStorage.getItem('writing_session_title');
+            if (!currentDocId && (savedText || savedTitle)) {
+                if (savedText) editor.value = savedText;
+                if (savedTitle) titleInput.value = savedTitle;
+            }
+            updateStats();
+            
+            // Inisiasi sistem awan
+            setupFirebase();
+        };
+
+        function autoSaveLocal() {
+            // Simpan lokal sebagai backup jika document baru/belum disave ke cloud
+            if (!currentDocId) {
+                localStorage.setItem('writing_session_text', editor.value);
+                localStorage.setItem('writing_session_title', titleInput.value);
+            }
+            updateStats();
+        }
+
+        editor.addEventListener('input', autoSaveLocal);
+        titleInput.addEventListener('input', autoSaveLocal);
+
+        function updateStats() {
+            const text = editor.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const chars = text.length;
+
+            wordCountDisplay.innerText = `${words} Kata`;
+            charCountDisplay.innerText = `${chars} Karakter`;
+        }
+
+        // Ekspos ke global window untuk onClick HTML
+        window.toggleTheme = () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcons();
+        };
+
+        function updateThemeIcons() {
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('sunIcon').classList.toggle('hidden', !isDark);
+            document.getElementById('moonIcon').classList.toggle('hidden', isDark);
+        }
+
+        window.clearAll = () => {
+            showModal('Apakah Anda yakin ingin mengosongkan editor saat ini?', () => {
+                editor.value = '';
+                titleInput.value = '';
+                currentDocId = null; // Menjadi draft baru
+                autoSaveLocal();
+                showToast('Halaman dibersihkan');
+                closeModal();
+            });
+        };
+
+        window.downloadText = () => {
+            const title = titleInput.value || 'Tanpa Judul';
+            const content = `${title}\n\n${editor.value}`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title.replace(/\s+/g, '_')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Berhasil diunduh ke PC/HP Anda');
+        };
+
+        window.handleFileUpload = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const parts = content.split('\n\n');
+                
+                if (parts.length >= 2) {
+                    titleInput.value = parts[0];
+                    editor.value = parts.slice(1).join('\n\n');
+                } else {
+                    titleInput.value = file.name.replace('.txt', '');
+                    editor.value = content;
+                }
+                
+                currentDocId = null; // Ini menjadi draft baru jika diupload
+                autoSaveLocal(); 
+                showToast('File lokal berhasil dimuat!');
+                event.target.value = ''; // Reset
+            };
+            
+            reader.readAsText(file);
+        };
+
+        // ----------------- NAVIGASI SPA & MODAL -----------------
+        window.switchView = (viewName) => {
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(viewName + 'View').classList.add('active');
+        };
+
+        window.createNewDoc = () => {
+            currentDocId = null;
+            titleInput.value = '';
+            editor.value = '';
+            updateStats();
+            switchView('editor');
+        };
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2000);
+        }
+
+        let confirmCallback = null;
+        window.showModal = (msg, callback) => {
+            document.getElementById('modalMessage').innerText = msg;
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            confirmCallback = callback;
+        };
+
+        window.closeModal = () => {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            confirmCallback = null;
+        };
+
+        document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+            if(confirmCallback) confirmCallback();
+        });
+
+    </script>
+</body>
+</html>
