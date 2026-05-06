@@ -22,10 +22,6 @@
             color: #e5e7eb;
         }
 
-        textarea:focus {
-            outline: none;
-        }
-
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -47,6 +43,32 @@
         .view-section.active {
             display: flex;
         }
+
+        /* Rich Text Editor Styles */
+        #editor[contenteditable="true"] {
+            outline: none;
+        }
+        #editor[contenteditable="true"]:empty::before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            cursor: text;
+        }
+        .dark #editor[contenteditable="true"]:empty::before {
+            color: #4b5563;
+        }
+        #editor img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: block;
+        }
+        #editor ul { list-style-type: disc; padding-left: 2rem; margin: 0.5rem 0; }
+        #editor ol { list-style-type: decimal; padding-left: 2rem; margin: 0.5rem 0; }
+        
+        /* Toolbar select/input styles for dark mode */
+        .dark .toolbar-select { background-color: #333; color: white; border-color: #555; }
+        .dark .toolbar-btn:hover { background-color: #444; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
@@ -119,12 +141,94 @@
 
         <!-- Area Menulis -->
         <main class="flex-grow flex flex-col items-center p-4 md:p-8">
-            <div class="w-full max-w-3xl flex flex-col h-full bg-white dark:bg-[#222] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden min-h-[70vh]">
+            <div class="w-full max-w-4xl flex flex-col h-full bg-white dark:bg-[#222] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden min-h-[70vh]">
+                
+                <!-- MS WORD TOOLBAR -->
+                <div class="bg-gray-100 dark:bg-[#2a2a2a] border-b border-gray-200 dark:border-gray-700 p-2 flex flex-wrap gap-2 items-center">
+                    
+                    <!-- Font & Size -->
+                    <select onchange="formatDoc('fontName', this.value)" class="toolbar-select text-sm p-1 border border-gray-300 rounded bg-white w-32 cursor-pointer">
+                        <option value="Lora">Lora (Serif)</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Verdana">Verdana</option>
+                    </select>
+                    <select onchange="formatDoc('fontSize', this.value)" class="toolbar-select text-sm p-1 border border-gray-300 rounded bg-white cursor-pointer">
+                        <option value="3">12</option>
+                        <option value="4">14</option>
+                        <option value="5">18</option>
+                        <option value="6">24</option>
+                        <option value="7">36</option>
+                    </select>
+
+                    <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
+                    <!-- Text Styling -->
+                    <button onclick="formatDoc('bold')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200 font-bold" title="Tebal (Ctrl+B)">B</button>
+                    <button onclick="formatDoc('italic')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200 italic font-serif" title="Miring (Ctrl+I)">I</button>
+                    <button onclick="formatDoc('underline')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200 underline" title="Garis Bawah (Ctrl+U)">U</button>
+                    <button onclick="formatDoc('strikeThrough')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200 line-through" title="Coretan">ab</button>
+                    <button onclick="formatDoc('subscript')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200 text-xs" title="Subscript">X<sub>2</sub></button>
+                    <button onclick="formatDoc('superscript')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200 text-xs" title="Superscript">X<sup>2</sup></button>
+
+                    <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
+                    <!-- Colors -->
+                    <div class="flex items-center gap-1" title="Warna Teks">
+                        <span class="text-xs text-blue-600 font-bold">A</span>
+                        <input type="color" onchange="formatDoc('foreColor', this.value)" class="w-6 h-6 p-0 border-0 cursor-pointer rounded">
+                    </div>
+                    <div class="flex items-center gap-1" title="Warna Latar/Highlight">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><path d="M12 2l3 3-9 9-3-3 9-9z"/><path d="M15 5l4 4-9 9-4-4 9-9z"/><path d="M22 22H2"/></svg>
+                        <input type="color" value="#ffff00" onchange="formatDoc('hiliteColor', this.value)" class="w-6 h-6 p-0 border-0 cursor-pointer rounded">
+                    </div>
+
+                    <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
+                    <!-- Alignment -->
+                    <button onclick="formatDoc('justifyLeft')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Rata Kiri">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button onclick="formatDoc('justifyCenter')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Rata Tengah">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button onclick="formatDoc('justifyRight')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Rata Kanan">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button onclick="formatDoc('justifyFull')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Rata Kiri Kanan">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+
+                    <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
+                    <!-- Lists & Indent -->
+                    <button onclick="formatDoc('insertUnorderedList')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Bullet List">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+                    </button>
+                    <button onclick="formatDoc('insertOrderedList')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Number List">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M3 6h3v4H3z"/><path d="M3 12h3v4H3z"/><path d="M3 18h3v4H3z"/></svg>
+                    </button>
+                    <button onclick="formatDoc('outdent')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Kurangi Indent">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 8 3 12 7 16"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="18" x2="11" y2="18"/></svg>
+                    </button>
+                    <button onclick="formatDoc('indent')" class="toolbar-btn p-1.5 rounded hover:bg-gray-200 text-gray-800 dark:text-gray-200" title="Tambah Indent">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 8 21 12 17 16"/><line x1="3" y1="12" x2="13" y2="12"/><line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="18" x2="13" y2="18"/></svg>
+                    </button>
+
+                    <!-- Tombol Panduan Paste Gambar -->
+                    <div class="ml-auto flex items-center text-xs text-gray-500 italic pr-2 hidden sm:flex">
+                        *Anda bisa copy/paste gambar ke area penulisan
+                    </div>
+                </div>
+                <!-- END MS WORD TOOLBAR -->
+
                 <input type="text" id="titleInput" placeholder="Judul Tulisan..." 
                        class="w-full p-6 text-2xl md:text-3xl font-bold bg-transparent border-b border-gray-100 dark:border-gray-800 placeholder-gray-300 dark:placeholder-gray-700 editor-font">
                 
-                <textarea id="editor" placeholder="Mulai menulis cerita Anda di sini..." 
-                          class="w-full flex-grow p-6 md:p-10 text-lg md:text-xl leading-relaxed bg-transparent resize-none editor-font"></textarea>
+                <!-- DIV Diubah Menjadi ContentEditable agar bisa menampung rich text dan gambar -->
+                <div id="editor" contenteditable="true" data-placeholder="Mulai menulis cerita Anda di sini..." 
+                     class="w-full flex-grow p-6 md:p-10 text-lg md:text-xl leading-relaxed bg-transparent editor-font overflow-y-auto"></div>
             </div>
         </main>
 
@@ -206,6 +310,13 @@
         let writingsList = [];
         let currentDocId = null; 
 
+        // Fungsi Global Format Document (MS Word Toolbar)
+        window.formatDoc = (cmd, value = null) => {
+            document.execCommand(cmd, false, value);
+            editor.focus();
+            autoSaveLocal(); // Simpan saat format diubah
+        };
+
         // ----------------- PENGATURAN FIREBASE -----------------
         const setupFirebase = async () => {
             try {
@@ -271,7 +382,7 @@
             }
 
             const title = titleInput.value.trim() || 'Tanpa Judul';
-            const content = editor.value;
+            const content = editor.innerHTML; // Menggunakan innerHTML agar style dan gambar tersimpan
             const now = Date.now();
 
             const data = {
@@ -306,7 +417,7 @@
             if (writing) {
                 currentDocId = writing.id;
                 titleInput.value = writing.title;
-                editor.value = writing.content;
+                editor.innerHTML = writing.content; // Render HTML ke editor
                 updateStats();
                 switchView('editor');
             }
@@ -345,8 +456,10 @@
             writingsGrid.innerHTML = writingsList.map(w => {
                 const dateObj = new Date(w.updatedAt);
                 const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
-                // Buat cuplikan isi teks
-                const snippet = w.content.length > 120 ? w.content.substring(0, 120) + '...' : (w.content || 'Kosong...');
+                
+                // Hilangkan tag HTML untuk membuat cuplikan teks mentah
+                const rawText = w.content ? w.content.replace(/<[^>]+>/g, ' ') : '';
+                const snippet = rawText.length > 120 ? rawText.substring(0, 120) + '...' : (rawText || 'Kosong...');
 
                 return `
                     <div onclick="openCloudWriting('${w.id}')" class="bg-white dark:bg-[#222] p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 cursor-pointer hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all group flex flex-col h-48">
@@ -418,7 +531,7 @@
             const savedText = localStorage.getItem('writing_session_text');
             const savedTitle = localStorage.getItem('writing_session_title');
             if (!currentDocId && (savedText || savedTitle)) {
-                if (savedText) editor.value = savedText;
+                if (savedText) editor.innerHTML = savedText; // Menggunakan innerHTML
                 if (savedTitle) titleInput.value = savedTitle;
             }
             updateStats();
@@ -433,7 +546,7 @@
         function autoSaveLocal() {
             // Simpan lokal sebagai backup jika document baru/belum disave ke cloud
             if (!currentDocId) {
-                localStorage.setItem('writing_session_text', editor.value);
+                localStorage.setItem('writing_session_text', editor.innerHTML); // Menggunakan innerHTML
                 localStorage.setItem('writing_session_title', titleInput.value);
             }
             updateStats();
@@ -443,7 +556,7 @@
         titleInput.addEventListener('input', autoSaveLocal);
 
         function updateStats() {
-            const text = editor.value.trim();
+            const text = editor.innerText.trim(); // Menggunakan innerText untuk menghitung kata mentah
             const words = text ? text.split(/\s+/).length : 0;
             const chars = text.length;
 
@@ -467,7 +580,7 @@
 
         window.clearAll = () => {
             showModal('Apakah Anda yakin ingin mengosongkan editor saat ini?', () => {
-                editor.value = '';
+                editor.innerHTML = ''; // Kosongkan HTML
                 titleInput.value = '';
                 currentDocId = null; // Menjadi draft baru
                 autoSaveLocal();
@@ -478,7 +591,8 @@
 
         window.downloadText = () => {
             const title = titleInput.value || 'Tanpa Judul';
-            const content = `${title}\n\n${editor.value}`;
+            // Saat diunduh sbg .txt, ambil teks mentahnya saja tanpa tag html gambar/style
+            const content = `${title}\n\n${editor.innerText}`; 
             const blob = new Blob([content], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -502,10 +616,11 @@
                 
                 if (parts.length >= 2) {
                     titleInput.value = parts[0];
-                    editor.value = parts.slice(1).join('\n\n');
+                    // Ubah enter menjadi br tag agar terbaca rapi di format rich text html
+                    editor.innerHTML = parts.slice(1).join('\n\n').replace(/\n/g, '<br>');
                 } else {
                     titleInput.value = file.name.replace('.txt', '');
-                    editor.value = content;
+                    editor.innerHTML = content.replace(/\n/g, '<br>');
                 }
                 
                 currentDocId = null; // Ini menjadi draft baru jika diupload
@@ -528,7 +643,7 @@
         window.createNewDoc = () => {
             currentDocId = null;
             titleInput.value = '';
-            editor.value = '';
+            editor.innerHTML = '';
             updateStats();
             switchView('editor');
         };
