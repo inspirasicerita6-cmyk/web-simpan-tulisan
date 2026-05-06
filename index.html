@@ -62,6 +62,22 @@
             border-radius: 8px;
             margin: 1rem 0;
             display: block;
+            cursor: pointer;
+        }
+        #editor img.selected-img {
+            outline: 3px solid #3b82f6;
+        }
+        .img-resize-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background-color: #3b82f6;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            display: none;
+            z-index: 50;
+            box-shadow: 0 0 4px rgba(0,0,0,0.3);
         }
         #editor ul { list-style-type: disc; padding-left: 2rem; margin: 0.5rem 0; }
         #editor ol { list-style-type: decimal; padding-left: 2rem; margin: 0.5rem 0; }
@@ -554,6 +570,90 @@
 
         editor.addEventListener('input', autoSaveLocal);
         titleInput.addEventListener('input', autoSaveLocal);
+
+        // Fitur Paste Gambar Otomatis (Menggunakan Blob URL)
+        editor.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || window.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                // Cari jika item yang di-paste adalah gambar
+                if (items[i].type.indexOf('image') !== -1) {
+                    e.preventDefault(); // Mencegah paste default yang menyebabkan ikon gambar rusak
+                    
+                    const file = items[i].getAsFile();
+                    const blobUrl = URL.createObjectURL(file); // Membuat URL 'blob:' seperti permintaan
+                    
+                    // Menyisipkan gambar secara native pada posisi kursor menggunakan execCommand
+                    document.execCommand('insertImage', false, blobUrl);
+                    
+                    autoSaveLocal(); // Otomatis simpan perubahan
+                    break; // Ambil satu gambar pertama saja jika ada multiple copy
+                }
+            }
+        });
+
+        // ----------------- FITUR RESIZE GAMBAR -----------------
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'img-resize-handle';
+        document.body.appendChild(resizeHandle);
+
+        let currentImage = null;
+        let isResizing = false;
+        let startX, startWidth;
+
+        function updateHandlePosition() {
+            if (!currentImage) return;
+            const rect = currentImage.getBoundingClientRect();
+            // Posisikan di pojok kanan bawah gambar
+            resizeHandle.style.left = (rect.right - 7 + window.scrollX) + 'px';
+            resizeHandle.style.top = (rect.bottom - 7 + window.scrollY) + 'px';
+            resizeHandle.style.display = 'block';
+        }
+
+        function hideResizer() {
+            resizeHandle.style.display = 'none';
+            document.querySelectorAll('#editor img').forEach(img => img.classList.remove('selected-img'));
+            currentImage = null;
+        }
+
+        editor.addEventListener('click', (e) => {
+            if (e.target.tagName === 'IMG') {
+                hideResizer(); // Bersihkan seleksi gambar lain sebelumnya
+                currentImage = e.target;
+                currentImage.classList.add('selected-img');
+                updateHandlePosition();
+            } else {
+                hideResizer(); // Sembunyikan jika klik area lain di editor
+            }
+        });
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = currentImage.offsetWidth;
+            e.preventDefault(); // Hindari terbloknya teks (text selection) saat menyeret
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing || !currentImage) return;
+            const dx = e.clientX - startX;
+            const newWidth = Math.max(50, startWidth + dx); // Minimal lebar 50px agar tidak hilang
+            currentImage.style.width = newWidth + 'px';
+            currentImage.style.height = 'auto'; // Biarkan tinggi mengikuti rasio aslinya
+            updateHandlePosition();
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                autoSaveLocal(); // Simpan ukuran baru ke memori draft
+            }
+        });
+
+        // Memastikan titik resize ikut bergeser jika layar digulir (scroll) atau di-resize
+        window.addEventListener('scroll', () => { if (currentImage) updateHandlePosition(); });
+        editor.addEventListener('scroll', () => { if (currentImage) updateHandlePosition(); });
+        window.addEventListener('resize', () => { if (currentImage) updateHandlePosition(); });
+        // -------------------------------------------------------
 
         function updateStats() {
             const text = editor.innerText.trim(); // Menggunakan innerText untuk menghitung kata mentah
