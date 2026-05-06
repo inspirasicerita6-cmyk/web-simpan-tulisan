@@ -69,15 +69,16 @@
         }
         .img-resize-handle {
             position: absolute;
-            width: 14px;
-            height: 14px;
+            width: 24px;
+            height: 24px;
             background-color: #3b82f6;
-            border: 2px solid white;
+            border: 3px solid white;
             border-radius: 50%;
             cursor: nwse-resize;
             display: none;
-            z-index: 50;
-            box-shadow: 0 0 4px rgba(0,0,0,0.3);
+            z-index: 1000;
+            box-shadow: 0 0 6px rgba(0,0,0,0.3);
+            touch-action: none;
         }
         #editor ul { list-style-type: disc; padding-left: 2rem; margin: 0.5rem 0; }
         #editor ol { list-style-type: decimal; padding-left: 2rem; margin: 0.5rem 0; }
@@ -603,56 +604,76 @@
         function updateHandlePosition() {
             if (!currentImage) return;
             const rect = currentImage.getBoundingClientRect();
-            // Posisikan di pojok kanan bawah gambar
-            resizeHandle.style.left = (rect.right - 7 + window.scrollX) + 'px';
-            resizeHandle.style.top = (rect.bottom - 7 + window.scrollY) + 'px';
+            // Posisikan di pojok kanan bawah gambar (dikurangi setengah ukuran handle agar pas di tengah sudut)
+            resizeHandle.style.left = (rect.right - 12 + window.scrollX) + 'px';
+            resizeHandle.style.top = (rect.bottom - 12 + window.scrollY) + 'px';
             resizeHandle.style.display = 'block';
         }
 
         function hideResizer() {
             resizeHandle.style.display = 'none';
-            document.querySelectorAll('#editor img').forEach(img => img.classList.remove('selected-img'));
+            document.querySelectorAll('#editor img').forEach(img => {
+                img.classList.remove('selected-img');
+                img.draggable = true; // Kembalikan sifat asli
+            });
             currentImage = null;
         }
 
         editor.addEventListener('click', (e) => {
             if (e.target.tagName === 'IMG') {
-                hideResizer(); // Bersihkan seleksi gambar lain sebelumnya
+                hideResizer(); 
                 currentImage = e.target;
                 currentImage.classList.add('selected-img');
+                currentImage.draggable = false; // Matikan native drag browser agar tarikan tidak terganggu
                 updateHandlePosition();
             } else {
-                hideResizer(); // Sembunyikan jika klik area lain di editor
+                hideResizer(); 
             }
         });
 
-        resizeHandle.addEventListener('mousedown', (e) => {
+        // Dukungan untuk Mouse & Touch (HP/Tablet)
+        function getClientX(e) {
+            return e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+        }
+
+        function initResize(e) {
             isResizing = true;
-            startX = e.clientX;
+            startX = getClientX(e);
             startWidth = currentImage.offsetWidth;
-            e.preventDefault(); // Hindari terbloknya teks (text selection) saat menyeret
-        });
+            e.preventDefault(); // Mencegah scroll layar saat menarik tombol di HP
+        }
 
-        document.addEventListener('mousemove', (e) => {
+        function doResize(e) {
             if (!isResizing || !currentImage) return;
-            const dx = e.clientX - startX;
-            const newWidth = Math.max(50, startWidth + dx); // Minimal lebar 50px agar tidak hilang
+            const currentX = getClientX(e);
+            const dx = currentX - startX;
+            const newWidth = Math.max(50, startWidth + dx); // Minimal lebar 50px
             currentImage.style.width = newWidth + 'px';
-            currentImage.style.height = 'auto'; // Biarkan tinggi mengikuti rasio aslinya
+            currentImage.style.height = 'auto'; // Pastikan proporsional
             updateHandlePosition();
-        });
+        }
 
-        document.addEventListener('mouseup', () => {
+        function endResize() {
             if (isResizing) {
                 isResizing = false;
                 autoSaveLocal(); // Simpan ukuran baru ke memori draft
             }
-        });
+        }
 
-        // Memastikan titik resize ikut bergeser jika layar digulir (scroll) atau di-resize
+        // Listener Handle
+        resizeHandle.addEventListener('mousedown', initResize);
+        resizeHandle.addEventListener('touchstart', initResize, { passive: false });
+
+        // Listener Global
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('touchmove', doResize, { passive: false });
+        document.addEventListener('mouseup', endResize);
+        document.addEventListener('touchend', endResize);
+
+        // Update posisi jika di-scroll atau resize layar
         window.addEventListener('scroll', () => { if (currentImage) updateHandlePosition(); });
         editor.addEventListener('scroll', () => { if (currentImage) updateHandlePosition(); });
-        window.addEventListener('resize', () => { if (currentImage) updateHandlePosition(); });
+        window.addEventListener('resize', () => { if (currentImage) hideResizer(); }); // Sembunyikan saat layar di-resize
         // -------------------------------------------------------
 
         function updateStats() {
